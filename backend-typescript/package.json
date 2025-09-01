@@ -1,0 +1,41 @@
+{
+  "name": "pc-monitor-typescript-backend",
+  "version": "0.1.0",
+  "description": "PC Monitor with TypeScript backend via Electron",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "concurrently \"tsc -w\" \"wait-on dist/main.js && electron dist/main.js\"",
+    "build": "tsc && electron-builder",
+    "start": "npm run dev",
+    "compile": "tsc",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "electron": "^27.1.3",
+    "ws": "^8.14.2",
+    "systeminformation": "^5.21.22",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@types/express": "^4.17.20",
+    "@types/cors": "^2.8.15",
+    "@types/ws": "^8.5.8",
+    "electron-builder": "^24.8.1",
+    "typescript": "^5.2.2",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.2.0",
+    "rimraf": "^5.0.5"
+  },
+  "build": {
+    "appId": "com.pcmonitor.typescript",
+    "productName": "PC Monitor (TypeScript)",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "dist/**/*"
+    ]
+  }
+}

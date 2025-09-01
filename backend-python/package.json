@@ -1,0 +1,37 @@
+{
+  "name": "pc-monitor-python-backend",
+  "version": "0.1.0",
+  "description": "PC Monitor with Python backend via Electron",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "concurrently \"uv run python monitor.py\" \"electron src/main.js\"",
+    "build": "electron-builder",
+    "start": "npm run dev",
+    "python:install": "uv sync",
+    "python:dev": "uv run python monitor.py",
+    "python:lint": "uv run ruff check .",
+    "python:format": "uv run black .",
+    "python:test": "uv run pytest"
+  },
+  "dependencies": {
+    "electron": "^27.1.3",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.8.1",
+    "concurrently": "^8.2.2"
+  },
+  "build": {
+    "appId": "com.pcmonitor.python",
+    "productName": "PC Monitor (Python)",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "monitor.py",
+      "pyproject.toml",
+      ".python-version"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo init:*)",
+      "Bash(npm install)",
+      "Bash(dotnet restore:*)",
+      "Bash(dir)",
+      "Bash(npm run compile:*)",
+      "Bash(python:*)",
+      "Bash(dotnet build)",
+      "Bash(vcpkg install:*)",
+      "Bash(cmake:*)",
+      "Bash(timeout:*)",
+      "Bash(dotnet --version)",
+      "Bash(uv init:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
