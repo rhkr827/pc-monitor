@@ -9,7 +9,7 @@ interface UseSystemStatsReturn {
   error: ErrorData | null;
 }
 
-export const useSystemStats = (refreshInterval: number = 1000): UseSystemStatsReturn => {
+export const useSystemStats = (_refreshInterval: number = 1000): UseSystemStatsReturn => {
   const [cpu, setCpu] = useState<CPUUsageData | null>(null);
   const [memory, setMemory] = useState<MemoryUsageData | null>(null);
   const [cores, setCores] = useState<CPUCoreData[]>([]);
@@ -17,7 +17,7 @@ export const useSystemStats = (refreshInterval: number = 1000): UseSystemStatsRe
   const [error, setError] = useState<ErrorData | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
 

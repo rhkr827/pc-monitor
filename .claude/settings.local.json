@@ -12,7 +12,18 @@
       "Bash(cmake:*)",
       "Bash(timeout:*)",
       "Bash(dotnet --version)",
-      "Bash(uv init:*)"
+      "Bash(uv init:*)",
+      "Bash(npm run build:*)",
+      "Bash(rustc --version)",
+      "Bash(cargo --version)",
+      "Bash(cargo:*)",
+      "Bash(where cl)",
+      "Bash(winget install:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "Bash(winget list:*)",
+      "Bash(rustup toolchain:*)",
+      "Bash(uv run:*)"
     ],
     "deny": [],
     "ask": []

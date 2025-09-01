@@ -14,7 +14,6 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({
   refreshInterval = 1000,
-  theme = 'dark',
 }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('1m');
   const { cpu, memory, cores, isConnected, error } = useSystemStats(refreshInterval);

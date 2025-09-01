@@ -9,6 +9,7 @@ export interface CPUUsageData {
   overall: number;        // 0-100%
   temperature?: number;   // Celsius
   averageFrequency: number; // MHz
+  timestamp?: number;     // Unix timestamp
 }
 
 export interface MemoryUsageData {
@@ -18,6 +19,7 @@ export interface MemoryUsageData {
   cache: number;          // bytes
   buffers: number;        // bytes
   usagePercent: number;   // calculated 0-100%
+  timestamp?: number;     // Unix timestamp
 }
 
 export interface CPUCoreData {
@@ -35,7 +37,7 @@ export interface WebSocketMessage {
 export interface ErrorData {
   code: 'PERMISSION_DENIED' | 'SYSTEM_ERROR' | 'CONNECTION_LOST';
   message: string;
-  retry: boolean;
+  retry: boolean | (() => void);
 }
 
 export interface ChartDataPoint {

@@ -2,6 +2,7 @@
   "name": "pc-monitor-python-backend",
   "version": "0.1.0",
   "description": "PC Monitor with Python backend via Electron",
+  "author": "PC Monitor Team",
   "main": "src/main.js",
   "scripts": {
     "dev": "concurrently \"uv run python monitor.py\" \"electron src/main.js\"",
@@ -14,10 +15,10 @@
     "python:test": "uv run pytest"
   },
   "dependencies": {
-    "electron": "^27.1.3",
     "ws": "^8.14.2"
   },
   "devDependencies": {
+    "electron": "^27.1.3",
     "electron-builder": "^24.8.1",
     "concurrently": "^8.2.2"
   },
