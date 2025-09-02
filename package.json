@@ -15,13 +15,13 @@
     "build:python": "cd backend-python && npm run build",
     "build:typescript": "cd backend-typescript && npm run build",
     "build:csharp": "cd backend-csharp && dotnet build",
-    "build:cpp": "cd backend-cpp && mkdir -p build && cd build && cmake .. && cmake --build .",
+    "build:cpp": "cd backend-cpp && if not exist build mkdir build && cd build && cmake -A x64 .. && cmake --build . --config Release",
     "install:all": "npm run install:frontend && npm run install:python && npm run install:typescript",
     "install:frontend": "cd frontend && npm install",
     "install:python": "cd backend-python && npm install && uv sync",
     "install:typescript": "cd backend-typescript && npm install",
     "install:csharp": "cd backend-csharp && dotnet restore",
-    "install:cpp": "cd backend-cpp && vcpkg install",
+    "install:cpp": "echo 'Dependencies will be fetched automatically during build'",
     "clean": "rm -rf frontend/dist backend-rust/target backend-python/dist backend-typescript/dist backend-csharp/bin backend-csharp/obj backend-cpp/build",
     "lint:frontend": "cd frontend && npm run lint",
     "test:all": "npm run test:python && npm run test:typescript && npm run test:csharp",
@@ -30,7 +30,8 @@
     "test:csharp": "cd backend-csharp && dotnet test",
     "lint:all": "npm run lint:frontend && npm run lint:python",
     "lint:python": "cd backend-python && uv run ruff check .",
-    "format:python": "cd backend-python && uv run black ."
+    "format:python": "cd backend-python && uv run black .",
+    "build:prod": "npm run build:all"
   },
   "keywords": [
     "pc",

@@ -1,0 +1,25 @@
+# Clangd configuration for pc-monitor-cpp
+# Only include src and include directories, exclude _deps
+
+CompileFlags:
+  Add:
+    - -I./include
+    - -std=c++20
+  Remove:
+    - -fcoroutines-ts
+    
+Index:
+  # Only index our source code, not external dependencies
+  Background: Build
+  StandardLibrary: Yes
+  
+Diagnostics:
+  # Disable diagnostics for external dependencies
+  Suppress:
+    - "*/_deps/*"
+    - "*/build/_deps/*"
+    
+# Exclude external dependencies from indexing
+If:
+  PathMatch: [".*/_deps/.*", ".*/build/_deps/.*"]
+  PathExclude: [".*/_deps/.*", ".*/build/_deps/.*"]

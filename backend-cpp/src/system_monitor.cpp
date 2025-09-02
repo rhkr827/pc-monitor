@@ -1,262 +1,234 @@
 #include "system_monitor.hpp"
-#include <thread>
-#include <chrono>
-#include <algorithm>
-#include <numeric>
 
-#ifdef _WIN32
-#include <windows.h>
+#include <algorithm>
+#include <chrono>
+#include <numeric>
+#include <thread>
+
 #include <pdh.h>
-#include <psapi.h>
 #include <powerbase.h>
+#include <psapi.h>
+#include <windows.h>
 #pragma comment(lib, "pdh.lib")
 #pragma comment(lib, "psapi.lib")
-#endif
 
 namespace pc_monitor {
 
 class SystemMonitor::Impl {
 public:
-#ifdef _WIN32
     PDH_HQUERY cpuQuery = nullptr;
     PDH_HCOUNTER cpuTotal = nullptr;
     std::vector<PDH_HCOUNTER> cpuCores;
     bool initialized = false;
-#endif
 
     Impl() = default;
-    
+
     ~Impl() {
-#ifdef _WIN32
-        cleanup();
-#endif
+        Cleanup();
     }
-    
-    Result<void> initialize() {
-#ifdef _WIN32
+
+    Result<void> Initialize() {
         // Initialize PDH for CPU monitoring
         if (PdhOpenQuery(nullptr, 0, &cpuQuery) != ERROR_SUCCESS) {
             return std::unexpected(SystemError::INITIALIZATION_FAILED);
         }
-        
+
         // Add CPU total counter
-        if (PdhAddEnglishCounter(cpuQuery, L"\\Processor(_Total)\\% Processor Time", 0, &cpuTotal) != ERROR_SUCCESS) {
-            cleanup();
+        if (PdhAddEnglishCounterW(cpuQuery, L"\\Processor(_Total)\\% Processor Time", 0, &cpuTotal) != ERROR_SUCCESS) {
+            Cleanup();
             return std::unexpected(SystemError::INITIALIZATION_FAILED);
         }
-        
+
         // Get number of logical processors
-        SYSTEM_INFO sysInfo;
-        GetSystemInfo(&sysInfo);
-        
+        SYSTEM_INFO SysInfo;
+        GetSystemInfo(&SysInfo);
+
         // Add individual core counters
-        cpuCores.reserve(sysInfo.dwNumberOfProcessors);
-        for (DWORD i = 0; i < sysInfo.dwNumberOfProcessors; ++i) {
-            PDH_HCOUNTER coreCounter;
-            std::wstring counterPath = std::format(L"\\Processor({})\\% Processor Time", i);
-            
-            if (PdhAddEnglishCounter(cpuQuery, counterPath.c_str(), 0, &coreCounter) == ERROR_SUCCESS) {
-                cpuCores.push_back(coreCounter);
+        cpuCores.reserve(SysInfo.dwNumberOfProcessors);
+        for (DWORD I = 0; I < SysInfo.dwNumberOfProcessors; ++I) {
+            PDH_HCOUNTER CoreCounter = nullptr;
+            std::wstring const CounterPath = std::format(L"\\Processor({})\\% Processor Time", I);
+
+            if (PdhAddEnglishCounterW(cpuQuery, CounterPath.c_str(), 0, &CoreCounter) == ERROR_SUCCESS) {
+                cpuCores.push_back(CoreCounter);
             }
         }
-        
+
         // Collect first sample (required for PDH)
         PdhCollectQueryData(cpuQuery);
         std::this_thread::sleep_for(std::chrono::milliseconds{100});
-        
+
         initialized = true;
         return {};
-#else
-        return std::unexpected(SystemError::SYSTEM_ERROR);
-#endif
     }
-    
-    Result<SystemStats> getCurrentStats() {
+
+    Result<SystemStats> GetCurrentStats() {
         if (!initialized) {
             return std::unexpected(SystemError::INITIALIZATION_FAILED);
         }
-        
-        SystemStats stats;
-        stats.timestamp = std::chrono::system_clock::now();
-        
-        auto cpuResult = getCPUStats();
-        if (!cpuResult) {
-            return std::unexpected(cpuResult.error());
+
+        SystemStats Stats;
+        Stats.timestamp = std::chrono::system_clock::now();
+
+        auto CpuResult = GetCpuStats();
+        if (!CpuResult) {
+            return std::unexpected(CpuResult.error());
         }
-        stats.cpu = std::move(*cpuResult);
-        
-        auto memResult = getMemoryStats();
-        if (!memResult) {
-            return std::unexpected(memResult.error());
+        Stats.cpu = std::move(*CpuResult);
+
+        auto MemResult = GetMemoryStats();
+        if (!MemResult) {
+            return std::unexpected(MemResult.error());
         }
-        stats.memory = std::move(*memResult);
-        
-        return stats;
+        Stats.memory = *MemResult;
+
+        return Stats;
     }
 
 private:
-    void cleanup() {
-#ifdef _WIN32
-        if (cpuQuery) {
+    void Cleanup() {
+        if (cpuQuery != nullptr) {
             PdhCloseQuery(cpuQuery);
             cpuQuery = nullptr;
         }
         cpuCores.clear();
         initialized = false;
-#endif
     }
-    
-    Result<CPUUsageData> getCPUStats() {
-#ifdef _WIN32
+
+    Result<CPUUsageData> GetCpuStats() {
         // Collect query data
         if (PdhCollectQueryData(cpuQuery) != ERROR_SUCCESS) {
             return std::unexpected(SystemError::DATA_UNAVAILABLE);
         }
-        
-        CPUUsageData cpuData;
-        
+
+        CPUUsageData CpuData;
+
         // Get total CPU usage
-        PDH_FMT_COUNTERVALUE counterVal;
-        if (PdhGetFormattedCounterValue(cpuTotal, PDH_FMT_DOUBLE, nullptr, &counterVal) == ERROR_SUCCESS) {
-            cpuData.overall = std::clamp(counterVal.dblValue, 0.0, 100.0);
+        PDH_FMT_COUNTERVALUE CounterVal;
+        if (PdhGetFormattedCounterValue(cpuTotal, PDH_FMT_DOUBLE, nullptr, &CounterVal) == ERROR_SUCCESS) {
+            CpuData.overall = std::clamp(CounterVal.doubleValue, 0.0, 100.0);
         }
-        
+
         // Get individual core usage
-        cpuData.cores.reserve(cpuCores.size());
-        for (std::size_t i = 0; i < cpuCores.size(); ++i) {
-            if (PdhGetFormattedCounterValue(cpuCores[i], PDH_FMT_DOUBLE, nullptr, &counterVal) == ERROR_SUCCESS) {
-                CPUCoreData coreData{
-                    .coreId = static_cast<std::uint32_t>(i),
-                    .usage = std::clamp(counterVal.dblValue, 0.0, 100.0),
-                    .frequency = getCoreFrequency(i)
-                };
-                cpuData.cores.push_back(std::move(coreData));
+        CpuData.cores.reserve(cpuCores.size());
+        for (std::size_t I = 0; I < cpuCores.size(); ++I) {
+            if (PdhGetFormattedCounterValue(cpuCores[I], PDH_FMT_DOUBLE, nullptr, &CounterVal) == ERROR_SUCCESS) {
+                CPUCoreData CoreData{.coreId = static_cast<std::uint32_t>(I),
+                                     .usage = std::clamp(CounterVal.doubleValue, 0.0, 100.0),
+                                     .frequency = GetCoreFrequency(I)};
+                CpuData.cores.push_back(std::move(CoreData));
             }
         }
-        
+
         // Calculate average frequency
-        if (!cpuData.cores.empty()) {
-            auto frequencies = cpuData.cores | std::views::transform([](const auto& core) { 
-                return core.frequency; 
-            });
-            cpuData.averageFrequency = static_cast<std::uint64_t>(utils::average(frequencies));
+        if (!CpuData.cores.empty()) {
+            auto Frequencies = CpuData.cores | std::views::transform([](const auto& core) { return core.frequency; });
+            CpuData.averageFrequency = static_cast<std::uint64_t>(utils::Average(Frequencies));
         }
-        
+
         // Try to get CPU temperature (optional)
-        cpuData.temperature = getCPUTemperature();
-        
-        return cpuData;
-#else
-        return std::unexpected(SystemError::SYSTEM_ERROR);
-#endif
+        CpuData.temperature = GetCpuTemperature();
+
+        return CpuData;
     }
-    
-    Result<MemoryUsageData> getMemoryStats() {
-#ifdef _WIN32
-        MEMORYSTATUSEX memStatus;
-        memStatus.dwLength = sizeof(memStatus);
-        
-        if (!GlobalMemoryStatusEx(&memStatus)) {
+
+    Result<MemoryUsageData> GetMemoryStats() {
+        MEMORYSTATUSEX MemStatus;
+        MemStatus.dwLength = sizeof(MemStatus);
+
+        if (GlobalMemoryStatusEx(&MemStatus) == 0) {
             return std::unexpected(SystemError::DATA_UNAVAILABLE);
         }
-        
+
         // Get more detailed memory info
-        PROCESS_MEMORY_COUNTERS_EX pmc;
-        HANDLE hProcess = GetCurrentProcess();
-        
-        MemoryUsageData memData{
-            .total = memStatus.ullTotalPhys,
-            .used = memStatus.ullTotalPhys - memStatus.ullAvailPhys,
-            .available = memStatus.ullAvailPhys,
-            .cache = 0, // Windows doesn't easily expose cache info
-            .buffers = 0, // Windows doesn't easily expose buffer info
-            .usagePercent = static_cast<double>(memStatus.dwMemoryLoad)
-        };
-        
+        // PROCESS_MEMORY_COUNTERS_EX pmc;  // Reserved for future use
+        // HANDLE hProcess = GetCurrentProcess();  // Reserved for future use
+
+        MemoryUsageData MemData{.total = MemStatus.ullTotalPhys,
+                                .used = MemStatus.ullTotalPhys - MemStatus.ullAvailPhys,
+                                .available = MemStatus.ullAvailPhys,
+                                .cache = 0,    // Windows doesn't easily expose cache info
+                                .buffers = 0,  // Windows doesn't easily expose buffer info
+                                .usagePercent = static_cast<double>(MemStatus.dwMemoryLoad)};
+
         // Try to get cache information from performance counters
-        memData.cache = getCacheSize();
-        
-        return memData;
-#else
-        return std::unexpected(SystemError::SYSTEM_ERROR);
-#endif
+        MemData.cache = GetCacheSize();
+
+        return MemData;
     }
-    
-#ifdef _WIN32
-    std::uint64_t getCoreFrequency(std::size_t coreIndex) {
+
+    static std::uint64_t GetCoreFrequency(std::size_t /* coreIndex */) {
         // Try to get processor frequency - simplified implementation
-        HKEY hKey;
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-            L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 
-            0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-            
-            DWORD mhz;
-            DWORD size = sizeof(mhz);
-            if (RegQueryValueEx(hKey, L"~MHz", nullptr, nullptr, 
-                reinterpret_cast<LPBYTE>(&mhz), &size) == ERROR_SUCCESS) {
-                RegCloseKey(hKey);
-                return static_cast<std::uint64_t>(mhz);
+        HKEY HKey = nullptr;
+        if (RegOpenKeyExW(
+                HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &HKey) ==
+            ERROR_SUCCESS) {
+            DWORD Mhz = 0;
+            DWORD Size = sizeof(Mhz);
+            if (RegQueryValueExW(HKey, L"~MHz", nullptr, nullptr, reinterpret_cast<LPBYTE>(&Mhz), &Size) ==
+                ERROR_SUCCESS) {
+                RegCloseKey(HKey);
+                return static_cast<std::uint64_t>(Mhz);
             }
-            RegCloseKey(hKey);
+            RegCloseKey(HKey);
         }
-        
-        return 2400; // Default fallback frequency
+
+        return 2400;  // Default fallback frequency
     }
-    
-    std::optional<double> getCPUTemperature() {
+
+    static std::optional<double> GetCpuTemperature() {
         // CPU temperature is not easily accessible on Windows without WMI
         // This would require additional libraries like WMI or hardware-specific APIs
         // For now, return nullopt
         return std::nullopt;
     }
-    
-    std::uint64_t getCacheSize() {
+
+    static std::uint64_t GetCacheSize() {
         // Get cache size from system info - simplified
-        DWORD bufferSize = 0;
-        GetLogicalProcessorInformation(nullptr, &bufferSize);
-        
-        if (bufferSize > 0) {
-            std::vector<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> buffer(
-                bufferSize / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION));
-            
-            if (GetLogicalProcessorInformation(buffer.data(), &bufferSize)) {
-                std::uint64_t totalCache = 0;
-                for (const auto& info : buffer) {
-                    if (info.Relationship == RelationCache) {
-                        totalCache += info.Cache.Size;
+        DWORD BufferSize = 0;
+        GetLogicalProcessorInformation(nullptr, &BufferSize);
+
+        if (BufferSize > 0) {
+            std::vector<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> Buffer(BufferSize /
+                                                                     sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION));
+
+            if (GetLogicalProcessorInformation(Buffer.data(), &BufferSize) != 0) {
+                std::uint64_t TotalCache = 0;
+                for (const auto& Info : Buffer) {
+                    if (Info.Relationship == RelationCache) {
+                        TotalCache += Info.Cache.Size;
                     }
                 }
-                return totalCache;
+                return TotalCache;
             }
         }
-        
+
         return 0;
     }
-#endif
 };
 
 // SystemMonitor implementation
-SystemMonitor::SystemMonitor() : pImpl(std::make_unique<Impl>()) {}
+SystemMonitor::SystemMonitor() : pImpl_(std::make_unique<Impl>()) {}
 
 SystemMonitor::~SystemMonitor() = default;
 
-Result<void> SystemMonitor::initialize() {
-    return pImpl->initialize();
+Result<void> SystemMonitor::Initialize() {
+    return pImpl_->Initialize();
 }
 
-Result<SystemStats> SystemMonitor::getCurrentStats() {
-    return pImpl->getCurrentStats();
+Result<SystemStats> SystemMonitor::GetCurrentStats() {
+    return pImpl_->GetCurrentStats();
 }
 
-SystemMonitor::StatsGenerator SystemMonitor::streamStats(std::chrono::milliseconds interval) {
+SystemMonitor::StatsGenerator SystemMonitor::StreamStats(std::chrono::milliseconds interval) {
     while (true) {
-        auto stats = getCurrentStats();
-        if (stats) {
-            co_yield *stats;
+        auto Stats = GetCurrentStats();
+        if (Stats) {
+            co_yield *Stats;
         }
-        
+
         std::this_thread::sleep_for(interval);
     }
 }
 
-} // namespace pc_monitor
+}  // namespace pc_monitor

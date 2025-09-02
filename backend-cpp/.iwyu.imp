@@ -1,0 +1,33 @@
+# IWYU (Include What You Use) mappings file
+# This file defines mapping rules for include dependencies
+
+# Standard library mappings for Windows/MSVC
+[
+  # Windows API headers
+  { include: ["<windows.h>", "private", "<Windows.h>", "public"] },
+  { include: ["<pdh.h>", "private", "<Pdh.h>", "public"] },
+  { include: ["<psapi.h>", "private", "<Psapi.h>", "public"] },
+  
+  # Standard library containers
+  { include: ["<bits/stl_vector.h>", "private", "<vector>", "public"] },
+  { include: ["<bits/stl_map.h>", "private", "<map>", "public"] },
+  { include: ["<bits/stl_set.h>", "private", "<set>", "public"] },
+  { include: ["<bits/stl_string.h>", "private", "<string>", "public"] },
+  
+  # Standard library utilities
+  { include: ["<bits/shared_ptr.h>", "private", "<memory>", "public"] },
+  { include: ["<bits/unique_ptr.h>", "private", "<memory>", "public"] },
+  { include: ["<bits/chrono.h>", "private", "<chrono>", "public"] },
+  { include: ["<bits/this_thread_sleep.h>", "private", "<thread>", "public"] },
+  
+  # C++23 and modern features
+  { include: ["<bits/ranges_algo.h>", "private", "<ranges>", "public"] },
+  { include: ["<bits/expected.h>", "private", "<expected>", "public"] },
+  { include: ["<bits/format.h>", "private", "<format>", "public"] },
+  { include: ["<bits/coroutine.h>", "private", "<coroutine>", "public"] },
+  { include: ["<bits/span.h>", "private", "<span>", "public"] },
+  
+  # Third-party library mappings
+  { include: ["\"nlohmann/json.hpp\"", "private", "<nlohmann/json.hpp>", "public"] },
+  { include: ["\"httplib.h\"", "private", "<httplib.h>", "public"] }
+]
