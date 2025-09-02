@@ -47,6 +47,7 @@ pip-delete-this-directory.txt
 .pytest_cache/
 htmlcov/
 .venv
+.claude
 
 # uv
 .uv/
