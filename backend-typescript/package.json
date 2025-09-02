@@ -31,7 +31,7 @@
   },
   "build": {
     "appId": "com.pcmonitor.typescript",
-    "productName": "PC Monitor (TypeScript)",
+    "productName": "pc-monitor-typescript",
     "directories": {
       "output": "dist"
     },

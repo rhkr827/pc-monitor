@@ -49,7 +49,7 @@ include(FetchContent)
 FetchContent_Declare(
     nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.2
+    GIT_TAG v3.12.0
     GIT_SHALLOW TRUE
 )
 
@@ -68,7 +68,7 @@ FetchContent_MakeAvailable(nlohmann_json httplib)
 find_package(Threads REQUIRED)
 
 # Create executable
-add_executable(pc-monitor
+add_executable(pc-monitor-cpp
     include/system_monitor.hpp
     include/web_server.hpp
     src/main.cpp
@@ -77,7 +77,7 @@ add_executable(pc-monitor
 )
 
 # Link libraries
-target_link_libraries(pc-monitor PRIVATE
+target_link_libraries(pc-monitor-cpp PRIVATE
     Threads::Threads
     nlohmann_json::nlohmann_json
     httplib::httplib
@@ -85,7 +85,7 @@ target_link_libraries(pc-monitor PRIVATE
 
 # Windows specific libraries
 if(WIN32)
-    target_link_libraries(pc-monitor PRIVATE
+    target_link_libraries(pc-monitor-cpp PRIVATE
         pdh.lib
         psapi.lib
         kernel32.lib
@@ -95,30 +95,30 @@ if(WIN32)
 endif()
 
 # Include directories
-target_include_directories(pc-monitor PRIVATE
+target_include_directories(pc-monitor-cpp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Compiler specific options
 if(MSVC OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_compile_options(pc-monitor PRIVATE /W4)  # High warning level
-    # target_compile_options(pc-monitor PRIVATE /WX)  # Treat warnings as errors
-    target_compile_options(pc-monitor PRIVATE /permissive-) # Strict conformance
+    target_compile_options(pc-monitor-cpp PRIVATE /W4)  # High warning level
+    # target_compile_options(pc-monitor-cpp PRIVATE /WX)  # Treat warnings as errors
+    target_compile_options(pc-monitor-cpp PRIVATE /permissive-) # Strict conformance
     # Disable warnings for external dependencies
-    target_compile_options(pc-monitor PRIVATE /external:W0)    
-    target_compile_options(pc-monitor PRIVATE /external:anglebrackets)
+    target_compile_options(pc-monitor-cpp PRIVATE /external:W0)    
+    target_compile_options(pc-monitor-cpp PRIVATE /external:anglebrackets)
 else()
-    target_compile_options(pc-monitor PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    target_compile_options(pc-monitor-cpp PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 # Enable coroutines
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(pc-monitor PRIVATE -fcoroutines)
+    target_compile_options(pc-monitor-cpp PRIVATE -fcoroutines)
 endif()
 
 # Specific settings for MSVC LLVM toolset
 if(CMAKE_GENERATOR_TOOLSET STREQUAL "ClangCL")
-    target_compile_options(pc-monitor PRIVATE -Wno-unused-command-line-argument)
-    target_compile_options(pc-monitor PRIVATE /external:W0)    
-    target_compile_options(pc-monitor PRIVATE /external:anglebrackets)
+    target_compile_options(pc-monitor-cpp PRIVATE -Wno-unused-command-line-argument)
+    target_compile_options(pc-monitor-cpp PRIVATE /external:W0)    
+    target_compile_options(pc-monitor-cpp PRIVATE /external:anglebrackets)
 endif()

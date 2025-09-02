@@ -7,8 +7,8 @@
     <Nullable>enable</Nullable>
     <LangVersion>13.0</LangVersion>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
-    <AssemblyName>PCMonitor</AssemblyName>
-    <RootNamespace>PCMonitor</RootNamespace>
+    <AssemblyName>pc-monitor-csharp</AssemblyName>
+    <RootNamespace>pc-monitor-csharp</RootNamespace>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

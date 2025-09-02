@@ -132,7 +132,7 @@ void WebServer::HandleWebSocket(const httplib::Request& /* req */, httplib::Resp
         auto Stats = monitor_->GetCurrentStats();
         if (Stats) {
             auto JsonData = json::ToJson(*Stats);
-            std::string SseData = std::format("data: {}\\n\\n", JsonData.dump());
+            std::string SseData = std::format("data: {}\n\n", JsonData.dump());
             res.set_content(SseData, "text/plain");
         }
 

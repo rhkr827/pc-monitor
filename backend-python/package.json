@@ -24,7 +24,7 @@
   },
   "build": {
     "appId": "com.pcmonitor.python",
-    "productName": "PC Monitor (Python)",
+    "productName": "pc-monitor-python",
     "directories": {
       "output": "dist"
     },

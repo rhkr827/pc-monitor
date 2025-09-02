@@ -10,7 +10,7 @@ namespace {
 std::atomic<bool> should_exit{false};
 
 void signal_handler(int signal) {
-    std::cout << std::format("\\nReceived signal {}, shutting down gracefully...\\n", signal);
+    std::cout << std::format("\nReceived signal {}, shutting down gracefully...\n", signal);
     should_exit.store(true);
 }
 }  // namespace
@@ -21,27 +21,27 @@ int main() {
         std::signal(SIGINT, signal_handler);
         std::signal(SIGTERM, signal_handler);
 
-        std::cout << "PC Monitor (C++23) - Starting...\\n";
+        std::cout << "PC Monitor (C++23) - Starting...\n";
 
         // Initialize system monitor
         auto monitor = std::make_shared<pc_monitor::SystemMonitor>();
 
         auto init_result = monitor->Initialize();
         if (!init_result) {
-            std::cerr << "Failed to initialize system monitor\\n";
+            std::cerr << "Failed to initialize system monitor\n";
             return 1;
         }
 
-        std::cout << "✅ System monitor initialized\\n";
+        std::cout << "✅ System monitor initialized\n";
 
         // Test system stats
         auto stats = monitor->GetCurrentStats();
         if (stats) {
-            std::cout << std::format("🖥️  CPU Usage: {}\\n", pc_monitor::utils::FormatPercentage(stats->cpu.overall));
-            std::cout << std::format("💾 Memory Usage: {} ({})\\n",
+            std::cout << std::format("🖥️  CPU Usage: {}\n", pc_monitor::utils::FormatPercentage(stats->cpu.overall));
+            std::cout << std::format("💾 Memory Usage: {} ({})\n",
                                      pc_monitor::utils::FormatBytes(stats->memory.used),
                                      pc_monitor::utils::FormatPercentage(stats->memory.usagePercent));
-            std::cout << std::format("🔥 CPU Cores: {} detected\\n", stats->cpu.cores.size());
+            std::cout << std::format("🔥 CPU Cores: {} detected\n", stats->cpu.cores.size());
         }
 
         // Start web server
@@ -50,17 +50,17 @@ int main() {
 
         auto server_result = server->Start();
         if (!server_result) {
-            std::cerr << "Failed to start web server\\n";
+            std::cerr << "Failed to start web server\n";
             return 1;
         }
 
-        std::cout << std::format("🚀 Server running on http://localhost:{}\\n", PORT);
-        std::cout << "Available endpoints:\\n";
-        std::cout << "  • GET /api/stats   - Complete system stats\\n";
-        std::cout << "  • GET /api/cpu     - CPU usage data\\n";
-        std::cout << "  • GET /api/memory  - Memory usage data\\n";
-        std::cout << "  • GET /health      - Health check\\n";
-        std::cout << "  • GET /ws/stats    - WebSocket/SSE stats stream\\n";
+        std::cout << std::format("🚀 Server running on http://localhost:{}\n", PORT);
+        std::cout << "Available endpoints:\n";
+        std::cout << "  • GET /api/stats   - Complete system stats\n";
+        std::cout << "  • GET /api/cpu     - CPU usage data\n";
+        std::cout << "  • GET /api/memory  - Memory usage data\n";
+        std::cout << "  • GET /health      - Health check\n";
+        std::cout << "  • GET /ws/stats    - WebSocket/SSE stats stream\n";
         std::cout << R"(\nPress Ctrl+C to stop...\n\n)";
 
         // Main loop - demonstrate C++23 coroutine usage
@@ -86,12 +86,12 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds{100});
         }
 
-        std::cout << "\\n🛑 Shutting down server...\\n";
+        std::cout << "\n🛑 Shutting down server...\n";
         server->Stop();
-        std::cout << "✅ Shutdown complete\\n";
+        std::cout << "✅ Shutdown complete\n";
 
     } catch (const std::exception& e) {
-        std::cerr << std::format("❌ Error: {}\\n", e.what());
+        std::cerr << std::format("❌ Error: {}\n", e.what());
         return 1;
     }
 
