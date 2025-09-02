@@ -13,6 +13,7 @@ target/
 bin/
 obj/
 out/
+gen/
 
 # Frontend build
 frontend/dist/

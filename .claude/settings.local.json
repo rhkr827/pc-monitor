@@ -42,7 +42,13 @@
       "Bash(\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang-tidy.exe\" --fix --fix-errors src/main.cpp -- -I./include -std=c++23)",
       "Bash(\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang-tidy.exe\" --fix --fix-errors src/system_monitor.cpp -- -I./include -std=c++23)",
       "Bash(\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\Llvm\\x64\\bin\\clang-tidy.exe\" --fix --fix-errors src/web_server.cpp -- -I./include -std=c++23)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebSearch",
+      "WebFetch(domain:v2.tauri.app)",
+      "Read(D:\\Repository/**)",
+      "WebFetch(domain:tauri.app)",
+      "WebFetch(domain:v1.tauri.app)",
+      "Bash(npm tauri:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,14 @@
 [package]
-name = "pc-monitor-backend"
+name = "pc-monitor-rust"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "pc-monitor-rust"
+path = "src/main.rs"
+
 [dependencies]
-tauri = { version = "1.5", features = ["system-tray"], default-features = false }
+tauri = { version = "2.8.4", features = [] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
@@ -14,12 +18,4 @@ sysinfo = "0.29"
 uuid = { version = "1.0", features = ["v4"] }
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
-
-[[bin]]
-name = "pc-monitor-backend"
-path = "src/main.rs"
-
-[features]
-default = ["custom-protocol"]
-custom-protocol = ["tauri/custom-protocol"]
+tauri-build = { version = "2.0", features = [] }
