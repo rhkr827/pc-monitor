@@ -4,6 +4,7 @@ import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { SystemMonitor } from './system-monitor';
 import { WebSocketMessage } from './types';
+import * as path from 'path';
 
 export class WebServer {
   private app: express.Application;
@@ -24,6 +25,24 @@ export class WebServer {
   private setupMiddleware(): void {
     this.app.use(cors());
     this.app.use(express.json());
+    
+    // Serve frontend static files
+    let frontendPath: string;
+    if (process.env.NODE_ENV === 'development') {
+      frontendPath = path.join(__dirname, '../../../frontend/dist');
+    } else {
+      // In packaged app, frontend is in app.asar at /frontend/dist
+      frontendPath = path.join(__dirname, '../frontend/dist');
+    }
+    console.log('📁 Serving static files from:', frontendPath);
+    this.app.use(express.static(frontendPath));
+    
+    // Fallback for SPA routing
+    this.app.get('*', (req, res) => {
+      if (!req.path.startsWith('/api') && !req.path.startsWith('/ws')) {
+        res.sendFile(path.join(frontendPath, 'index.html'));
+      }
+    });
   }
 
   private setupRoutes(): void {
@@ -49,6 +68,16 @@ export class WebServer {
         res.json(memoryData);
       } catch (error) {
         res.status(500).json({ error: 'Failed to get memory data' });
+      }
+    });
+
+    // Cores data endpoint
+    this.app.get('/api/cores', async (req, res) => {
+      try {
+        const stats = await this.monitor.getSystemStats();
+        res.json(stats.cpu.cores);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to get cores data' });
       }
     });
 

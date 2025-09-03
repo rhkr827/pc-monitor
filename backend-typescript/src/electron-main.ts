@@ -1,11 +1,13 @@
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import { WebServer } from './web-server';
+import { SystemMonitor } from './system-monitor';
 
 let mainWindow: BrowserWindow | null = null;
-let backendProcess: any = null;
+let webServer: WebServer | null = null;
 
 function createWindow(): void {
+  console.log('🖥️  Creating Electron window...');
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -14,11 +16,30 @@ function createWindow(): void {
       contextIsolation: false
     },
     title: 'PC Monitor (TypeScript)',
-    icon: path.join(__dirname, '../assets/icon.png')
+    show: false
   });
 
-  // Load frontend (assuming it's running on port 5173 for Vite dev server)
-  mainWindow.loadURL('http://localhost:5173');
+  console.log('🖥️  Electron window created');
+
+  // Load frontend (development vs production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Loading dev frontend from: http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5173');
+  } else {
+    console.log('🔍 Loading from localhost backend...');
+    setTimeout(() => {
+      mainWindow?.loadURL('http://localhost:3002');
+    }, 2000);
+  }
+  
+  mainWindow.once('ready-to-show', () => {
+    console.log('✅ UI ready - showing window');
+    mainWindow?.show();
+  });
+
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('❌ Failed to load frontend:', errorCode, errorDescription);
+  });
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
@@ -29,23 +50,36 @@ function createWindow(): void {
   });
 }
 
-function startBackend(): void {
-  // Start the TypeScript backend server
-  backendProcess = spawn('node', [path.join(__dirname, 'main.js')], {
-    stdio: 'inherit'
-  });
-
-  backendProcess.on('error', (error: Error) => {
-    console.error('Backend process error:', error);
-  });
-
-  backendProcess.on('exit', (code: number | null) => {
-    console.log(`Backend process exited with code ${code}`);
-  });
+async function startBackend(): Promise<void> {
+  try {
+    console.log('🚀 Starting backend server...');
+    const monitor = new SystemMonitor();
+    const initialized = await monitor.initialize();
+    
+    if (!initialized) {
+      console.error('❌ Failed to initialize system monitor');
+      return;
+    }
+    
+    console.log('✅ System monitor initialized');
+    
+    const PORT = 3002;
+    webServer = new WebServer(monitor, PORT);
+    const serverStarted = await webServer.start();
+    
+    if (!serverStarted) {
+      console.error('❌ Failed to start web server');
+      return;
+    }
+    
+    console.log(`✅ Backend server running on http://localhost:${PORT}`);
+  } catch (error) {
+    console.error('❌ Backend startup error:', error);
+  }
 }
 
-app.whenReady().then(() => {
-  startBackend();
+app.whenReady().then(async () => {
+  await startBackend();
   createWindow();
 
   app.on('activate', () => {
@@ -56,8 +90,8 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (backendProcess) {
-    backendProcess.kill();
+  if (webServer) {
+    webServer.stop();
   }
   
   if (process.platform !== 'darwin') {
@@ -66,7 +100,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  if (backendProcess) {
-    backendProcess.kill();
+  if (webServer) {
+    webServer.stop();
   }
 });

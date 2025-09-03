@@ -1,7 +1,6 @@
 export interface SystemStats {
   cpu: CPUUsageData;
   memory: MemoryUsageData;
-  cores: CPUCoreData[];
   timestamp: number;
 }
 
@@ -9,6 +8,7 @@ export interface CPUUsageData {
   overall: number;        // 0-100%
   temperature?: number;   // Celsius
   averageFrequency: number; // MHz
+  cores: CPUCoreData[];
   timestamp?: number;     // Unix timestamp
 }
 

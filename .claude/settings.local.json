@@ -71,7 +71,14 @@
       "Bash(./pc-monitor-csharp.exe)",
       "Bash(dotnet run:*)",
       "Bash(npm run start:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(\"pc-monitor-typescript.exe\")",
+      "Bash(\"./pc-monitor-typescript.exe\")",
+      "Bash(taskkill:*)",
+      "Bash(\".\\dist\\typescript\\win-unpacked\\pc-monitor-typescript.exe\")",
+      "Bash(npx @electron/asar extract:*)",
+      "Read(\\/**)",
+      "Bash(npm run clean:*)"
     ],
     "deny": [],
     "ask": []

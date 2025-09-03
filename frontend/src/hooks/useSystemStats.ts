@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { SystemStats, CPUUsageData, MemoryUsageData, CPUCoreData, ErrorData } from '../types';
 
 interface UseSystemStatsReturn {
@@ -9,121 +10,87 @@ interface UseSystemStatsReturn {
   error: ErrorData | null;
 }
 
-export const useSystemStats = (_refreshInterval: number = 1000): UseSystemStatsReturn => {
+// Declare Tauri globals
+declare global {
+  interface Window {
+    __TAURI__: any;
+  }
+}
+
+const isTauri = () => typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+
+export const useSystemStats = (refreshInterval: number = 1000): UseSystemStatsReturn => {
   const [cpu, setCpu] = useState<CPUUsageData | null>(null);
   const [memory, setMemory] = useState<MemoryUsageData | null>(null);
   const [cores, setCores] = useState<CPUCoreData[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<ErrorData | null>(null);
   
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<number | null>(null);
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
+  const intervalRef = useRef<number | null>(null);
 
-  const connectWebSocket = () => {
+  const fetchSystemStats = async () => {
     try {
-      const ws = new WebSocket('ws://localhost:8080/ws/stats');
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log('WebSocket connected');
+      if (isTauri()) {
+        // Use Tauri commands
+        const stats: SystemStats = await invoke('get_system_stats');
+        setCpu({ ...stats.cpu, timestamp: stats.timestamp });
+        setMemory({ ...stats.memory, timestamp: stats.timestamp });
+        setCores(stats.cpu.cores);
         setIsConnected(true);
         setError(null);
-        reconnectAttempts.current = 0;
-      };
+      } else {
+        // Fallback to HTTP API for other backends
+        const statsResponse = await fetch('http://localhost:3002/api/stats');
 
-      ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
+        if (statsResponse.ok) {
+          const stats = await statsResponse.json();
           
-          if (message.type === 'stats' && message.data) {
-            const stats: SystemStats = message.data;
-            setCpu({ ...stats.cpu, timestamp: stats.timestamp });
-            setMemory({ ...stats.memory, timestamp: stats.timestamp });
-            setCores(stats.cores);
-          } else if (message.type === 'error') {
-            setError(message.data);
-          }
-        } catch (err) {
-          console.error('Failed to parse WebSocket message:', err);
-        }
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        setIsConnected(false);
-        
-        if (reconnectAttempts.current < maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttempts.current++;
-            connectWebSocket();
-          }, delay);
+          setCpu({ ...stats.cpu, timestamp: stats.timestamp });
+          setMemory({ ...stats.memory, timestamp: stats.timestamp });
+          setCores(stats.cpu.cores);
+          setIsConnected(true);
+          setError(null);
         } else {
-          setError({
-            code: 'CONNECTION_LOST',
-            message: 'Failed to reconnect after multiple attempts',
-            retry: true,
-          });
+          throw new Error('HTTP API request failed');
         }
-      };
-
-      ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-        setError({
-          code: 'SYSTEM_ERROR',
-          message: 'WebSocket connection error',
-          retry: true,
-        });
-      };
+      }
     } catch (err) {
-      console.error('Failed to create WebSocket connection:', err);
+      console.error('Failed to fetch system stats:', err);
+      setIsConnected(false);
       setError({
-        code: 'CONNECTION_LOST',
-        message: 'Unable to establish connection',
+        code: 'SYSTEM_ERROR',
+        message: err instanceof Error ? err.message : 'Failed to fetch system stats',
         retry: true,
       });
     }
   };
 
-  const fetchInitialData = async () => {
-    try {
-      const [cpuResponse, memoryResponse] = await Promise.all([
-        fetch('http://localhost:8080/api/cpu'),
-        fetch('http://localhost:8080/api/memory'),
-      ]);
+  const startPolling = () => {
+    // Fetch immediately
+    fetchSystemStats();
+    
+    // Then poll at intervals
+    intervalRef.current = setInterval(fetchSystemStats, refreshInterval) as unknown as number;
+  };
 
-      if (cpuResponse.ok && memoryResponse.ok) {
-        const cpuData = await cpuResponse.json();
-        const memoryData = await memoryResponse.json();
-        
-        setCpu(cpuData);
-        setMemory(memoryData);
-      }
-    } catch (err) {
-      console.error('Failed to fetch initial data:', err);
+  const stopPolling = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current as number);
+      intervalRef.current = null;
     }
   };
 
   useEffect(() => {
-    fetchInitialData();
-    connectWebSocket();
-
+    startPolling();
+    
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
+      stopPolling();
     };
-  }, []);
+  }, [refreshInterval]);
 
   const retryConnection = () => {
-    reconnectAttempts.current = 0;
     setError(null);
-    connectWebSocket();
+    startPolling();
   };
 
   return {

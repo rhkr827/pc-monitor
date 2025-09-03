@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "PC Monitor with TypeScript backend via Electron",
   "author": "PC Monitor Team",
-  "main": "dist/main.js",
+  "main": "dist/electron-main.js",
   "scripts": {
     "dev": "concurrently \"tsc -w\" \"wait-on dist/main.js && electron dist/main.js\"",
     "build": "tsc && electron-builder",
@@ -33,10 +33,11 @@
     "appId": "com.pcmonitor.typescript",
     "productName": "pc-monitor-typescript",
     "directories": {
-      "output": "dist"
+      "output": "../dist/typescript"
     },
     "files": [
-      "dist/**/*"
+      "dist/**/*",
+      { "from": "../frontend/dist", "to": "frontend/dist" }
     ]
   }
 }
