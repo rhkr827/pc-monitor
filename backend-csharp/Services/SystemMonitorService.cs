@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using System.Management;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using PCMonitor.Models;
 
 namespace PCMonitor.Services;
 
+[SupportedOSPlatform("windows")]
 public sealed class SystemMonitorService : ISystemMonitorService, IDisposable
 {
     private readonly List<PerformanceCounter> _cpuCounters = [];

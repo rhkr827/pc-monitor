@@ -116,9 +116,17 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(pc-monitor-cpp PRIVATE -fcoroutines)
 endif()
 
+# Set output directory
+set_target_properties(pc-monitor-cpp PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../dist/cpp
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/../dist/cpp
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/../dist/cpp
+)
+
 # Specific settings for MSVC LLVM toolset
 if(CMAKE_GENERATOR_TOOLSET STREQUAL "ClangCL")
     target_compile_options(pc-monitor-cpp PRIVATE -Wno-unused-command-line-argument)
     target_compile_options(pc-monitor-cpp PRIVATE /external:W0)    
     target_compile_options(pc-monitor-cpp PRIVATE /external:anglebrackets)
 endif()
+
